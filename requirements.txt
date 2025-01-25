@@ -1,0 +1,5 @@
+# Linting
+black==24.4.2
+
+# Main Application
+streamlit==1.41.1
