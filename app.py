@@ -3,6 +3,7 @@
 import streamlit as st
 
 from formulas.annual_solar_yield import annual_solar_yield
+from formulas.relative_yield_potential import get_relative_yield
 from formulas.roof_areas_scheffler import (
     gable_roof_area_scheffler,
     pitched_roof_area_scheffler_one,
@@ -19,7 +20,7 @@ from formulas.roof_areas_tum import (
 # Title and General Description
 # -------------------------------------------------
 st.set_page_config(page_title="Solar Roof Calculator", layout="centered")
-st.title("Solar Roof Calculator")
+st.title("Solar Roof Calculator by Simon Strobel")
 st.markdown(
     """
 Welcome to the **Solar Roof Calculator**. Use the tabs below to:
@@ -32,8 +33,13 @@ Welcome to the **Solar Roof Calculator**. Use the tabs below to:
 # -------------------------------------------------
 # Tabs
 # -------------------------------------------------
-tab_scheffler, tab_tum, tab_solar_yield = st.tabs(
-    ["Scheffler Roof Area", "TUM Roof Area", "Annual Solar Yield"]
+tab_scheffler, tab_tum, tab_solar_yield, tab_relative_yield_potential = st.tabs(
+    [
+        "Scheffler Roof Area",
+        "TUM Roof Area",
+        "Annual Solar Yield",
+        "Relative Yield Potential",
+    ]
 )
 
 
@@ -233,3 +239,29 @@ with tab_solar_yield:
         st.success(f"**Estimated annual solar yield:** {yield_result:.2f} kWh")
     else:
         st.info("Enter values and click the button to calculate the solar yield.")
+
+
+# -------------------------------------------------
+# Relative Yield Potential Tab
+# -------------------------------------------------
+
+with tab_relative_yield_potential:
+    st.header("Relative Yield Potential")
+
+    orientation = st.number_input(
+        "Orientation (degrees)",
+        min_value=-90,
+        max_value=180,
+        value=0,
+        step=15,
+        key="orientation",
+    )
+    tilt = st.number_input(
+        "Tilt (degrees)", min_value=0, max_value=90, value=0, step=10, key="tilt"
+    )
+
+    if st.button("Get Relative Yield"):
+        yield_result = get_relative_yield(orientation, tilt)
+        st.success(f"**Relative yield potential:** {yield_result:.2f}")
+    else:
+        st.info("Enter values and click the button to calculate the relative yield.")
