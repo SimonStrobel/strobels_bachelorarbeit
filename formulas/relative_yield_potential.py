@@ -56,13 +56,13 @@ for i, tilt in enumerate(tilt_angles):
 
 
 def get_relative_yield(orientation: int, tilt: int) -> float:
-    """This function returns the relative yield potential for a given orientation and tilt.
+    """This function returns the relative yield potential for a given orientation and tilt as a percentage.
 
     Args:
         orientation (int): The orientation in degrees.
         tilt (int): The tilt in degrees.
 
     Returns:
-        float: The relative yield potential.
+        float: The relative yield potential as a percentage.
     """
-    return building_matrix[tilt][orientation]
+    return building_matrix[tilt][orientation] / 100

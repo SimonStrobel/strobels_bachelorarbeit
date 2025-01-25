@@ -1,25 +1,30 @@
-"""This script creates a Streamlit app for the Solar Roof Calculator."""
+"""This script creates a Streamlit app for the Solar Roof Calculator.
+
+Docs:
+    https://streamlit.io
+"""
 
 import streamlit as st
+import pandas as pd
 
 from formulas.annual_solar_yield import annual_solar_yield
 from formulas.relative_yield_potential import get_relative_yield
 from formulas.roof_areas_scheffler import (
-    gable_roof_area_scheffler,
-    pitched_roof_area_scheffler_one,
-    pitched_roof_area_scheffler_two,
     flat_roof_area_scheffler,
+    gable_roof_area_scheffler,
+    pitched_roof_area_scheffler,
 )
 from formulas.roof_areas_tum import (
+    flat_roof_area_tum,
     gable_roof_area_tum,
     pitched_roof_area_tum,
-    flat_roof_area_tum,
 )
+
 
 # -------------------------------------------------
 # Title and General Description
 # -------------------------------------------------
-st.set_page_config(page_title="Solar Roof Calculator", layout="centered")
+st.set_page_config(page_title="Solar Roof Calculator", layout="wide")
 st.title("Solar Roof Calculator by Simon Strobel")
 st.markdown(
     """
@@ -33,12 +38,19 @@ Welcome to the **Solar Roof Calculator**. Use the tabs below to:
 # -------------------------------------------------
 # Tabs
 # -------------------------------------------------
-tab_scheffler, tab_tum, tab_solar_yield, tab_relative_yield_potential = st.tabs(
+(
+    tab_scheffler,
+    tab_tum,
+    tab_solar_yield,
+    tab_relative_yield_potential,
+    tab_total_electricity_yield,
+) = st.tabs(
     [
         "Scheffler Roof Area",
         "TUM Roof Area",
         "Annual Solar Yield",
         "Relative Yield Potential",
+        "Total Electricity Yield",
     ]
 )
 
@@ -52,7 +64,7 @@ with tab_scheffler:
     # User Inputs
     roof_type = st.selectbox(
         "Select Roof Type",
-        ["Gable", "Pitched - Variation 1", "Pitched - Variation 2", "Flat"],
+        ["Gable", "Pitched", "Flat"],
         key="scheffler_roof_type",
     )
 
@@ -64,34 +76,45 @@ with tab_scheffler:
         key="scheffler_building_area",
     )
 
-    if roof_type == "Gable":
-        roof_area = gable_roof_area_scheffler(building_area)
+    if roof_type == "Flat":
+        roof_area = flat_roof_area_scheffler(building_area)
 
-    elif roof_type == "Pitched - Variation 1":
-        roof_area = pitched_roof_area_scheffler_one(building_area)
-
-    elif roof_type == "Pitched - Variation 2":
+    elif roof_type == "Gable":
         roof_pitch = st.number_input(
             "Roof pitch (radians)",
             min_value=0.0,
             value=0.3,
             step=0.05,
-            key="scheffler_roof_pitch",
+            key="scheffler_roof_pitch_gable",
         )
-        roof_area = pitched_roof_area_scheffler_two(building_area, roof_pitch)
+        roof_area = gable_roof_area_scheffler(building_area, roof_pitch)
 
-    elif roof_type == "Flat":
-        st.warning(
-            "No formula was provided for the flat roof (Scheffler). Returning 0."
+    elif roof_type == "Pitched":
+        reduction_factor = st.number_input(
+            "Reduction factor (0 - 1)",
+            min_value=0.0,
+            max_value=1.0,
+            value=1.0,
+            step=0.1,
+            key="scheffler_reduction_factor_pitched1",
         )
-        roof_area = flat_roof_area_scheffler(building_area)
+        roof_pitch = st.number_input(
+            "Roof pitch (radians)",
+            min_value=0.0,
+            value=0.3,
+            step=0.05,
+            key="scheffler_roof_pitch_pitched1",
+        )
+        roof_area = pitched_roof_area_scheffler(
+            building_area, reduction_factor, roof_pitch
+        )
 
     else:
         st.error("Invalid roof type selected. Please choose a valid option.")
 
     # Displays Result
     st.subheader("Calculated Scheffler Roof Area")
-    st.info(f"**Roof area:** {roof_area:.2f} m²")
+    st.success(f"**Roof area:** {roof_area:.2f} m²")
 
 
 # -------------------------------------------------
@@ -103,7 +126,7 @@ with tab_tum:
     # User Inputs
     roof_type = st.selectbox(
         "Select Roof Type",
-        ["Gable", "Pitched - Variation 1", "Pitched - Variation 2", "Flat"],
+        ["Gable", "Pitched", "Flat"],
         key="tum_roof_type",
     )
 
@@ -117,7 +140,10 @@ with tab_tum:
 
     roof_area_tum = 0.0
 
-    if roof_type == "Gable":
+    if roof_type == "Flat":
+        roof_area_tum = flat_roof_area_tum(building_area_tum)
+
+    elif roof_type == "Gable":
         reduction_factor = st.number_input(
             "Reduction factor (0 - 1)",
             min_value=0.0,
@@ -126,16 +152,18 @@ with tab_tum:
             step=0.1,
             key="tum_reduction_factor_gable",
         )
-        alpha = st.number_input(
-            "Alpha (roof angle in radians)",
+        roof_pitch = st.number_input(
+            "Roof pitch (radians)",
             min_value=0.0,
             value=0.3,
             step=0.05,
-            key="tum_alpha",
+            key="tum_roof_pitch_pitched1",
         )
-        roof_area_tum = gable_roof_area_tum(building_area_tum, reduction_factor, alpha)
+        roof_area_tum = gable_roof_area_tum(
+            building_area_tum, reduction_factor, roof_pitch
+        )
 
-    elif roof_type == "Pitched - Variation 1":
+    elif roof_type == "Pitched":
         reduction_factor = st.number_input(
             "Reduction factor (0 - 1)",
             min_value=0.0,
@@ -155,36 +183,12 @@ with tab_tum:
             building_area_tum, reduction_factor, roof_pitch
         )
 
-    elif roof_type == "Pitched - Variation 2":
-        st.info("Using the TUM pitched roof formula for Variation 2 as well.")
-        reduction_factor = st.number_input(
-            "Reduction factor (0 - 1)",
-            min_value=0.0,
-            max_value=1.0,
-            value=1.0,
-            step=0.1,
-            key="tum_reduction_factor_pitched2",
-        )
-        roof_pitch = st.number_input(
-            "Roof pitch (radians)",
-            min_value=0.0,
-            value=0.3,
-            step=0.05,
-            key="tum_roof_pitch_pitched2",
-        )
-        roof_area_tum = pitched_roof_area_tum(
-            building_area_tum, reduction_factor, roof_pitch
-        )
-
-    elif roof_type == "Flat":
-        roof_area_tum = flat_roof_area_tum(building_area_tum)
-
     else:
         st.error("Invalid roof type selected. Please choose a valid option.")
 
     # Displays Result
     st.subheader("Calculated TUM Roof Area")
-    st.info(f"**Roof area:** {roof_area_tum:.2f} m²")
+    st.success(f"**Roof area:** {roof_area_tum:.2f} m²")
 
 
 # -------------------------------------------------
@@ -265,3 +269,225 @@ with tab_relative_yield_potential:
         st.success(f"**Relative yield potential:** {yield_result:.2f}")
     else:
         st.info("Enter values and click the button to calculate the relative yield.")
+
+
+# -------------------------------------------------
+# Total Electricity Yield (Excel-Upload)
+# -------------------------------------------------
+with tab_total_electricity_yield:
+    st.header("Total Electricity Yield for Multiple Buildings (from Excel)")
+
+    st.write(
+        """
+        Upload an Excel file that contains **at least** the following columns:
+        - **building**  
+        - **building_area**  
+        - **roof** (e.g., *mixed*, *pitched*, *flat*, *gable*, etc.)  
+        - **tilt_angle** (in degrees)  
+        - **orientation** (in degrees; for example, 0 = South, -90 = East, 90 = West, 180 = North)  
+        - **module_efficiency** (between 0 and 1)  
+        - **solar_irradiation** (in kWh/m²)  
+        """
+    )
+
+    reduction_factor = st.number_input(
+        "Reduction factor (0 - 1)",
+        min_value=0.0,
+        max_value=1.0,
+        value=1.0,
+        step=0.1,
+        key="total_reduction_factor",
+    )
+
+    uploaded_file = st.file_uploader("Please upload an Excel file", type=["xlsx"])
+
+    if uploaded_file is not None:
+        df = pd.read_excel(uploaded_file)
+
+        st.subheader("Uploaded Data")
+        st.dataframe(df)
+
+        required_cols = [
+            "building",
+            "building_area",
+            "roof",
+            "tilt_angle",
+            "orientation",
+            "module_efficiency",
+            "solar_irradiation",
+        ]
+        missing_cols = [col.lower() for col in required_cols if col not in df.columns]
+
+        if missing_cols:
+            st.error(
+                f"The following columns are missing from the Excel file: {missing_cols}"
+            )
+
+        else:
+
+            # -------------------------------------------------
+            # Helper functions to compute Scheffler & TUM areas
+            # -------------------------------------------------
+
+            def compute_roof_area_scheffler(
+                building_area: float,
+                roof_type: str,
+                reduction_factor: float,
+                roof_pitch: float,
+            ) -> float:
+                """Compute the roof area (Scheffler) given the building area, roof type, and tilt (in degrees).
+
+                Args:
+                    building_area (float): The area of the building in square meters.
+                    roof_type (str): The type of the roof.
+                    reduction_factor (float): The reduction factor.
+                    roof_pitch (float): The pitch of the roof.
+
+                Returns:
+                    float: The roof area in square meters.
+                """
+                roof_type_lower = str(roof_type).lower()
+
+                if "flat" in roof_type_lower:
+                    return flat_roof_area_scheffler(building_area)
+
+                if "gable" in roof_type_lower:
+                    return gable_roof_area_scheffler(building_area, roof_pitch)
+
+                elif "pitched" in roof_type_lower:
+                    return pitched_roof_area_scheffler(
+                        building_area, reduction_factor, roof_pitch
+                    )
+
+                else:
+                    # If no match, default
+                    st.warning(f"Invalid roof type: {roof_type}")
+                    return -1.0
+
+            def compute_roof_area_tum(
+                building_area: float,
+                roof_type: str,
+                reduction_factor: float,
+                roof_pitch: float,
+            ) -> float:
+                """Compute the roof area (TUM) given the building area, roof type, and tilt (in degrees).
+
+                Args:
+                    building_area (float): The area of the building in square meters.
+                    roof_type (str): The type of the roof.
+                    reduction_factor (float): The reduction factor.
+                    roof_pitch (float): The pitch of the roof.
+
+                Returns:
+                    float: The roof area in square meters.
+                """
+                roof_type_lower = str(roof_type).lower()
+
+                if "flat" in roof_type_lower:
+                    return flat_roof_area_tum(building_area)
+
+                if "gable" in roof_type_lower:
+                    return gable_roof_area_tum(
+                        building_area,
+                        reduction_factor=reduction_factor,
+                        roof_pitch=roof_pitch,
+                    )
+
+                elif "pitched":
+                    return pitched_roof_area_tum(
+                        building_area,
+                        reduction_factor=reduction_factor,
+                        roof_pitch=roof_pitch,
+                    )
+
+                else:
+                    # If no match, default
+                    st.warning(f"Invalid roof type: {roof_type}")
+                    return -1.0
+
+            # -------------------------------------------------
+            # Compute Scheffler & TUM areas for each row
+            # -------------------------------------------------
+            df["computed_scheffler_area"] = df.apply(
+                lambda row: compute_roof_area_scheffler(
+                    row["building_area"],
+                    row["roof"],
+                    reduction_factor,
+                    row["tilt_angle"],
+                ),
+                axis=1,
+            )
+
+            df["computed_tum_area"] = df.apply(
+                lambda row: compute_roof_area_tum(
+                    row["building_area"],
+                    row["roof"],
+                    reduction_factor,
+                    row["tilt_angle"],
+                ),
+                axis=1,
+            )
+
+            # -------------------------------------------------
+            # Compute yields
+            # -------------------------------------------------
+            def compute_row_yields(row: pd.Series) -> tuple:
+                """Compute the electricity yields (Scheffler & TUM) for a given row.
+
+                Args:
+                    row (pd.Series): A row from the DataFrame.
+
+                Returns:
+                    tuple: The Scheffler and TUM electricity yields.
+                """
+                tilt_deg = row["tilt_angle"]
+                orientation_deg = row["orientation"]
+                rel_yield = get_relative_yield(int(orientation_deg), int(tilt_deg))
+
+                solar_irr = row["solar_irradiation"]
+                eff = row["module_efficiency"]
+
+                # Electricity yield according to Scheffler
+                scheffler_yield = annual_solar_yield(
+                    roof_area=row["computed_scheffler_area"],
+                    solar_irradiation=solar_irr,
+                    module_efficiency=eff,
+                    relative_yield=rel_yield,
+                )
+
+                # Electricity yield according to TUM
+                tum_yield = annual_solar_yield(
+                    roof_area=row["computed_tum_area"],
+                    solar_irradiation=solar_irr,
+                    module_efficiency=eff,
+                    relative_yield=rel_yield,
+                )
+
+                return scheffler_yield, tum_yield
+
+            df["scheffler_yield"], df["tum_yield"] = zip(
+                *df.apply(compute_row_yields, axis=1)
+            )
+            df["total_yield"] = df["scheffler_yield"] + df["tum_yield"]
+
+            # -------------------------------------------------
+            # Displays updated DataFrame
+            # -------------------------------------------------
+            st.subheader("Calculated Roof Areas and Yields per Building")
+            st.dataframe(df)
+
+            # -------------------------------------------------
+            # Summaries
+            # -------------------------------------------------
+            total_scheffler = df["scheffler_yield"].sum()
+            total_tum = df["tum_yield"].sum()
+            total_all = df["total_yield"].sum()
+
+            st.write("---")
+            st.write("### Summary of Total Yields")
+            st.success(f"**Total Scheffler Yield:** {total_scheffler:,.2f} kWh")
+            st.success(f"**Total TUM Yield:** {total_tum:,.2f} kWh")
+    else:
+        st.info(
+            "Please upload an Excel file to start the total electricity yield calculation."
+        )
