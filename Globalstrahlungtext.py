@@ -68,16 +68,12 @@ def stunde_elf_und_zwoelf_anpassen(
     Returns:
         pd.DataFrame: Angepasste stündliche Werte von UniBayreuth
     """
-    df_gs_bayreuth_hourly = (
-        daten_bayreuth.copy()
-    )  # df = dataframe, gs = globalstrahlung
+    df_gs_bayreuth_hourly = daten_bayreuth.copy()
     df_gs_mistelbach_daily = daten_mistelbach.copy()
 
-    globalstrahlung_angepasst = []  # hier ist das Endresultat gespeichert
+    globalstrahlung_angepasst = []
 
-    start_zahl = 0
-    end_zahl = len(df_gs_mistelbach_daily)  # 365
-    for zaehler in range(start_zahl, end_zahl):
+    for zaehler in range(0, len(df_gs_mistelbach_daily)):
         taeglicher_wert_mistelbach = df_gs_mistelbach_daily.loc[
             df_gs_mistelbach_daily.index[zaehler], "Globalstrahlung_Täglich"
         ]
@@ -96,16 +92,16 @@ def stunde_elf_und_zwoelf_anpassen(
             )
             continue
 
-        # Wenn die Werte nicht übereinstimmen, dann berechne die absolute Differenz
+        # Wenn die Werte nicht übereinstimmen, dann berechne die Differenz
         halbe_differenz = (
             taeglicher_wert_mistelbach - summe_24_stundenwerte_bayreuth
         ) / 2
 
         elf_uhr_wert_bayreuth = df_gs_bayreuth_hourly.loc[
-            df_gs_bayreuth_hourly.index[zaehler * 24 + 12], "Globalstrahlung_Stündlich"
+            df_gs_bayreuth_hourly.index[zaehler * 24 + 11], "Globalstrahlung_Stündlich"
         ]
         zwoelf_uhr_wert_bayreuth = df_gs_bayreuth_hourly.loc[
-            df_gs_bayreuth_hourly.index[zaehler * 24 + 13], "Globalstrahlung_Stündlich"
+            df_gs_bayreuth_hourly.index[zaehler * 24 + 12], "Globalstrahlung_Stündlich"
         ]
 
         neuer_elf_uhr_wert = elf_uhr_wert_bayreuth + halbe_differenz
@@ -113,7 +109,7 @@ def stunde_elf_und_zwoelf_anpassen(
 
         globalstrahlung_angepasst.extend(
             df_gs_bayreuth_hourly.loc[
-                df_gs_bayreuth_hourly.index[zaehler * 24 : zaehler * 24 + 12],
+                df_gs_bayreuth_hourly.index[zaehler * 24 : zaehler * 24 + 11],
                 "Globalstrahlung_Stündlich",
             ]
         )
@@ -121,19 +117,30 @@ def stunde_elf_und_zwoelf_anpassen(
         globalstrahlung_angepasst.append(neuer_zwoelf_uhr_wert)
         globalstrahlung_angepasst.extend(
             df_gs_bayreuth_hourly.loc[
-                df_gs_bayreuth_hourly.index[zaehler * 24 + 14 : zaehler * 24 + 24],
+                df_gs_bayreuth_hourly.index[zaehler * 24 + 13 : zaehler * 24 + 24],
                 "Globalstrahlung_Stündlich",
             ]
         )
 
+    if len(globalstrahlung_angepasst) != len(df_gs_bayreuth_hourly):
+        raise sys.exit(
+            f"Mismatch in number of rows: expected {len(df_gs_bayreuth_hourly)}, got {len(globalstrahlung_angepasst)}."
+        )
+
     # Erstelle ein neues DataFrame mit den angepassten Werten und Zeitstempeln
     df_gs_bayreuth_hourly["Globalstrahlung_Stündlich"] = globalstrahlung_angepasst
+
+    with pd.ExcelWriter(
+        "Globalstrahlung_Angepasst.xlsx", engine="xlsxwriter"
+    ) as writer:
+        df_gs_bayreuth_hourly.to_excel(writer, index=True, header=True)
+        worksheet = writer.sheets["Sheet1"]
+        worksheet.set_column("A:B", 20)
+
     df_gs_bayreuth_hourly.to_excel(
         "Globalstrahlung_Angepasst.xlsx", index=True, header=True
     )
     print("Angepasste Datei gespeichert: Globalstrahlung_Angepasst.xlsx")
-
-    return df_gs_bayreuth_hourly
 
 
 # führt den Code nur aus, wenn das Skript direkt ausgeführt wird
