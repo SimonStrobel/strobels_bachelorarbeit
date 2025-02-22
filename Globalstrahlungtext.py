@@ -1,3 +1,6 @@
+"""Globalstrahlungsberechnung"""
+
+import os
 import sys
 import pandas as pd
 
@@ -12,11 +15,14 @@ def erstelle_daten_bayreuth():
     Returns:
         list: Liste mit stündlichen Werten von UniBayreuth
     """
+    if not os.path.exists("data/GlobalstrahlungMessungUni.txt"):
+        sys.exit("Fehler: Datei UniBayreuth.txt nicht gefunden")
+
     zeitstempel_hourly = pd.date_range(
         start="2023-01-01 00:00:00", end="2023-12-31 23:00:00", freq="1h"
     )
     daten_bayreuth = []
-    with open("GlobalstrahlungMessungUni.txt", "r") as file:
+    with open("data/GlobalstrahlungMessungUni.txt", "r") as file:
         for zeile in file:
             daten_bayreuth.append(float(zeile))
 
@@ -38,9 +44,12 @@ def erstelle_daten_mistelbach():
     Returns:
         list: Liste mit täglichen Werten von Mistelbach
     """
+    if not os.path.exists("data/GlobalstrahlungMessungMistelbach.txt"):
+        sys.exit("Fehler: Datei Mistelbach.txt nicht gefunden")
+
     zeitstempel_daily = pd.date_range(start="2023-01-01", end="2023-12-31", freq="1D")
     daten_mistelbach_daily = []
-    with open("GlobalstrahlungMessungMistelbach.txt", "r") as file:
+    with open("data/GlobalstrahlungMessungMistelbach.txt", "r") as file:
         for zeile in file:
             daten_mistelbach_daily.append(float(zeile))
 
@@ -131,16 +140,13 @@ def stunde_elf_und_zwoelf_anpassen(
     df_gs_bayreuth_hourly["Globalstrahlung_Stündlich"] = globalstrahlung_angepasst
 
     with pd.ExcelWriter(
-        "Globalstrahlung_Angepasst.xlsx", engine="xlsxwriter"
+        "data/Globalstrahlung_Angepasst.xlsx", engine="xlsxwriter"
     ) as writer:
         df_gs_bayreuth_hourly.to_excel(writer, index=True, header=True)
         worksheet = writer.sheets["Sheet1"]
         worksheet.set_column("A:B", 50)
 
-    df_gs_bayreuth_hourly.to_excel(
-        "Globalstrahlung_Angepasst.xlsx", index=True, header=True
-    )
-    print("Angepasste Datei gespeichert: Globalstrahlung_Angepasst.xlsx")
+    print("Angepasste Datei gespeichert: data/Globalstrahlung_Angepasst.xlsx")
 
 
 # führt den Code nur aus, wenn das Skript direkt ausgeführt wird

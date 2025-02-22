@@ -1,11 +1,19 @@
 # Bachelorarbeit von Simon Strobel
 
-## Usage
+## Installation
 
-Run the Docker-Container with the following command:
+Install the required packages with the following command:
 
 ```bash
-docker build -t app . && docker run -p 8501:8501 app
+pip install -r requirements.txt
+```
+
+## Usage
+
+Run the Streamlit-App with the following command:
+
+```bash
+streamlit run app.py
 ```
 
 > [!NOTE]
@@ -17,3 +25,11 @@ docker build -t app . && docker run -p 8501:8501 app
 > - tilt_angle
 > - orientation module_efficiency
 > - solar_irradiation
+
+Run the `Globalstrahlung`-Function with the following command:
+
+```bash
+python globalstrahlung.py
+```
+> [!NOTE]
+> Ensure that 
