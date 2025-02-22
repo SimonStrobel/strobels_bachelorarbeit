@@ -135,7 +135,7 @@ def stunde_elf_und_zwoelf_anpassen(
     ) as writer:
         df_gs_bayreuth_hourly.to_excel(writer, index=True, header=True)
         worksheet = writer.sheets["Sheet1"]
-        worksheet.set_column("A:B", 20)
+        worksheet.set_column("A:B", 50)
 
     df_gs_bayreuth_hourly.to_excel(
         "Globalstrahlung_Angepasst.xlsx", index=True, header=True
