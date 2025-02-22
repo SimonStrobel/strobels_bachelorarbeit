@@ -148,21 +148,3 @@ if __name__ == "__main__":
     daten_bayreuth = erstelle_daten_bayreuth()
     daten_mistelbach = erstelle_daten_mistelbach()
     stunde_elf_und_zwoelf_anpassen(daten_bayreuth, daten_mistelbach)
-
-
-# # 🔹 4. Sicherstellen, dass keine zeitstempel fehlen
-# full_index = pd.date_range(start="2023-01-01 00:00:00", end="2023-12-31 23:00:00", freq="h")
-# missing_zeitstempel = full_index.difference(df_gs_bayreuth_hourly.index)
-
-# print("⏳ Fehlende zeitstempel:", missing_zeitstempel)
-
-# # Falls fehlende zeitstempel existieren → Hinzufügen!
-# df_gs_bayreuth_hourly = df_gs_bayreuth_hourly.reindex(full_index).fillna(0)
-
-# print("✅ Nach dem Fix: df_gs_bayreuth_hourly hat jetzt", len(df_gs_bayreuth_hourly), "Zeilen")
-
-# # 🔹 5. Ergebnisse speichern
-# # 🔴 Falls durch Berechnungen die Spalten verloren gehen, nochmal sicherstellen:
-# df_gs_bayreuth_hourly.columns = ["Globalstrahlung_Stündlich"]
-# df_gs_bayreuth_hourly.to_csv("Globalstrahlung_Angepasst.csv", sep=";", index=True, header=True)
-# print("Angepasste Datei gespeichert: Globalstrahlung_Angepasst.csv")
