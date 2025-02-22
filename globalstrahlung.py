@@ -5,15 +5,15 @@ import sys
 import pandas as pd
 
 
-def erstelle_daten_bayreuth():
+def erstelle_daten_bayreuth() -> pd.DataFrame:
     """Diese Funktion liest die stündlichen Werte von UniBayreuth ein und gibt sie als Liste zurück.
 
     Note:
         zeitstempel_hourly ist eine Liste von 8760 Stunden
-        (e.g. ['2023-01-01 00:00:00', '2023-01-01 01:00:00', ...] )
+        (e.g. ['2023-01-01 00:00:00', '2023-01-01 01:00:00', ...])
 
     Returns:
-        list: Liste mit stündlichen Werten von UniBayreuth
+        pd.DataFrame: Liste mit stündlichen Werten von UniBayreuth
     """
     if not os.path.exists("data/GlobalstrahlungMessungUni.txt"):
         sys.exit("Fehler: Datei UniBayreuth.txt nicht gefunden")
@@ -34,15 +34,15 @@ def erstelle_daten_bayreuth():
     )
 
 
-def erstelle_daten_mistelbach():
+def erstelle_daten_mistelbach() -> pd.DataFrame:
     """Diese Funktion liest die täglichen Werte von Mistelbach ein und gibt sie als Liste zurück.
 
     Note:
         zeitstempel_daily ist eine Liste von 365 Tagen
-        (e.g. ['2023-01-01', '2023-01-02', ...] )
+        (e.g. ['2023-01-01', '2023-01-02', ...])
 
     Returns:
-        list: Liste mit täglichen Werten von Mistelbach
+        pd.DataFrame: Liste mit täglichen Werten von Mistelbach
     """
     if not os.path.exists("data/GlobalstrahlungMessungMistelbach.txt"):
         sys.exit("Fehler: Datei Mistelbach.txt nicht gefunden")
@@ -140,13 +140,20 @@ def stunde_elf_und_zwoelf_anpassen(
     df_gs_bayreuth_hourly["Globalstrahlung_Stündlich"] = globalstrahlung_angepasst
 
     with pd.ExcelWriter(
-        "data/Globalstrahlung_Angepasst.xlsx", engine="xlsxwriter"
+        "data/globalstrahlung_angepasst.xlsx", engine="xlsxwriter"
     ) as writer:
         df_gs_bayreuth_hourly.to_excel(writer, index=True, header=True)
         worksheet = writer.sheets["Sheet1"]
         worksheet.set_column("A:B", 50)
 
-    print("Angepasste Datei gespeichert: data/Globalstrahlung_Angepasst.xlsx")
+    print("Angepasste Datei gespeichert: data/globalstrahlung_angepasst.xlsx")
+
+    df_gs_bayreuth_hourly.to_csv(
+        "data/globalstrahlung_angepasst.csv", index=True, header=True
+    )
+    print("CSV Datei gespeichert: data/globalstrahlung_angepasst.csv")
+
+    return df_gs_bayreuth_hourly
 
 
 # führt den Code nur aus, wenn das Skript direkt ausgeführt wird

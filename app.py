@@ -248,7 +248,6 @@ with tab_solar_yield:
 # -------------------------------------------------
 # Relative Yield Potential Tab
 # -------------------------------------------------
-
 with tab_relative_yield_potential:
     st.header("Relative Yield Potential")
 
