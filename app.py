@@ -80,14 +80,14 @@ with tab_scheffler:
         roof_area = flat_roof_area_scheffler(building_area)
 
     elif roof_type == "Gable":
-        roof_pitch = st.number_input(
+        titl_angle = st.number_input(
             "Roof pitch (radians)",
             min_value=0.0,
             value=0.3,
             step=0.05,
-            key="scheffler_roof_pitch_gable",
+            key="scheffler_titl_angle_gable",
         )
-        roof_area = gable_roof_area_scheffler(building_area, roof_pitch)
+        roof_area = gable_roof_area_scheffler(building_area, titl_angle)
 
     elif roof_type == "Pitched":
         reduction_factor = st.number_input(
@@ -98,15 +98,15 @@ with tab_scheffler:
             step=0.1,
             key="scheffler_reduction_factor_pitched1",
         )
-        roof_pitch = st.number_input(
+        titl_angle = st.number_input(
             "Roof pitch (radians)",
             min_value=0.0,
             value=0.3,
             step=0.05,
-            key="scheffler_roof_pitch_pitched1",
+            key="scheffler_titl_angle_pitched1",
         )
         roof_area = pitched_roof_area_scheffler(
-            building_area, reduction_factor, roof_pitch
+            building_area, reduction_factor, titl_angle
         )
 
     else:
@@ -152,15 +152,15 @@ with tab_tum:
             step=0.1,
             key="tum_reduction_factor_gable",
         )
-        roof_pitch = st.number_input(
+        titl_angle = st.number_input(
             "Roof pitch (radians)",
             min_value=0.0,
             value=0.3,
             step=0.05,
-            key="tum_roof_pitch_pitched1",
+            key="tum_titl_angle_pitched1",
         )
         roof_area_tum = gable_roof_area_tum(
-            building_area_tum, reduction_factor, roof_pitch
+            building_area_tum, reduction_factor, titl_angle
         )
 
     elif roof_type == "Pitched":
@@ -172,15 +172,15 @@ with tab_tum:
             step=0.1,
             key="tum_reduction_factor_pitched1",
         )
-        roof_pitch = st.number_input(
+        titl_angle = st.number_input(
             "Roof pitch (radians)",
             min_value=0.0,
             value=0.3,
             step=0.05,
-            key="tum_roof_pitch_pitched1",
+            key="tum_titl_angle_pitched1",
         )
         roof_area_tum = pitched_roof_area_tum(
-            building_area_tum, reduction_factor, roof_pitch
+            building_area_tum, reduction_factor, titl_angle
         )
 
     else:
@@ -332,7 +332,7 @@ with tab_total_electricity_yield:
                 building_area: float,
                 roof_type: str,
                 reduction_factor: float,
-                roof_pitch: float,
+                titl_angle: float,
             ) -> float:
                 """Compute the roof area (Scheffler) given the building area, roof type, and tilt (in degrees).
 
@@ -340,7 +340,7 @@ with tab_total_electricity_yield:
                     building_area (float): The area of the building in square meters.
                     roof_type (str): The type of the roof.
                     reduction_factor (float): The reduction factor.
-                    roof_pitch (float): The pitch of the roof.
+                    titl_angle (float): The pitch of the roof.
 
                 Returns:
                     float: The roof area in square meters.
@@ -351,11 +351,11 @@ with tab_total_electricity_yield:
                     return flat_roof_area_scheffler(building_area)
 
                 if "gable" in roof_type_lower:
-                    return gable_roof_area_scheffler(building_area, roof_pitch)
+                    return gable_roof_area_scheffler(building_area, titl_angle)
 
                 elif "pitched" in roof_type_lower:
                     return pitched_roof_area_scheffler(
-                        building_area, reduction_factor, roof_pitch
+                        building_area, reduction_factor, titl_angle
                     )
 
                 else:
@@ -367,7 +367,7 @@ with tab_total_electricity_yield:
                 building_area: float,
                 roof_type: str,
                 reduction_factor: float,
-                roof_pitch: float,
+                titl_angle: float,
             ) -> float:
                 """Compute the roof area (TUM) given the building area, roof type, and tilt (in degrees).
 
@@ -375,7 +375,7 @@ with tab_total_electricity_yield:
                     building_area (float): The area of the building in square meters.
                     roof_type (str): The type of the roof.
                     reduction_factor (float): The reduction factor.
-                    roof_pitch (float): The pitch of the roof.
+                    titl_angle (float): The pitch of the roof.
 
                 Returns:
                     float: The roof area in square meters.
@@ -389,14 +389,14 @@ with tab_total_electricity_yield:
                     return gable_roof_area_tum(
                         building_area,
                         reduction_factor=reduction_factor,
-                        roof_pitch=roof_pitch,
+                        titl_angle=titl_angle,
                     )
 
                 elif "pitched":
                     return pitched_roof_area_tum(
                         building_area,
                         reduction_factor=reduction_factor,
-                        roof_pitch=roof_pitch,
+                        titl_angle=titl_angle,
                     )
 
                 else:

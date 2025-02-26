@@ -6,10 +6,10 @@ Scheaffler:
         Parameter: building_area
 
     gable_roof_area_scheffler
-        Parameter: building_area, roof_pitch
+        Parameter: building_area, tilt_angle
 
     pitched_roof_area_scheffler
-        Parameter: building_area, reduction_factor, roof_pitch
+        Parameter: building_area, reduction_factor, tilt_angle
 
         
 TUM:
@@ -17,10 +17,10 @@ TUM:
         Parameter: building_area    
 
     gable_roof_area_tum
-        Parameter: building_area, reduction_factor, roof_pitch
+        Parameter: building_area, reduction_factor, tilt_angle
 
     pitched_roof_area_tum
-        Parameter: building_area, reduction_factor, roof_pitch  
+        Parameter: building_area, reduction_factor, tilt_angle  
 
  
 Relativer Ertragspotential:
@@ -33,9 +33,11 @@ Jährlicher Stromertrag:
         Parameter: roof_area, solar_irradiation, module_efficiency, relative_yield
 """
 
+import json
 import os
 import sys
 import pandas as pd
+import numpy as np
 
 from formulas.roof_areas_scheffler import (
     flat_roof_area_scheffler,
@@ -47,11 +49,16 @@ from formulas.roof_areas_tum import (
     gable_roof_area_tum,
     pitched_roof_area_tum,
 )
-from formulas.relative_yield_potential import get_relative_yield, orientations
+from formulas.relative_yield_potential import (
+    get_relative_yield,
+    orientations,
+)
 from formulas.annual_solar_yield import annual_solar_yield
 
+tilt_angles = [i for i in range(20, 51, 10)]  # 20, 30, 40, 50
 
-def erstelle_daten_grundflaeche() -> list:
+
+def erstelle_daten() -> list:
     """Diese Funktion liest die Grundfläche ein und gibt sie als Liste zurück.
 
     Returns:
@@ -60,7 +67,7 @@ def erstelle_daten_grundflaeche() -> list:
     if not os.path.exists("data/grundflaeche.csv"):
         sys.exit("Fehler: Datei grundflaeche.txt nicht gefunden")
 
-    daten_grundflaeche = []
+    daten = []
     with open("data/grundflaeche.csv", "r", encoding="utf-8") as file:
         for idx, zeile in enumerate(file):
             inhalte = zeile.strip().split(";")[:4]
@@ -84,7 +91,7 @@ def erstelle_daten_grundflaeche() -> list:
                 case _:
                     sys.exit("Fehler: Dachtyp nicht bekannt: " + inhalte[2])
 
-            daten_grundflaeche.append(
+            daten.append(
                 {
                     "building": inhalte[0],
                     "building_area": float(
@@ -95,184 +102,776 @@ def erstelle_daten_grundflaeche() -> list:
                 }
             )
 
-    return daten_grundflaeche
+    return daten
 
 
-def calulate_roof_area(daten_grundflaeche: list[dict]) -> list[dict]:
+def calulate_roof_area(daten: list[dict]) -> list[dict]:
     """Diese Funktion berechnet die Dachfläche.
 
     Args:
-        daten_grundflaeche (list[dict]): Liste mit den Gebäudedaten.
+        daten (list[dict]): Liste mit den Gebäudedaten.
 
     Returns:
         list[dict]: Liste mit den Gebäudedaten und der Dachfläche.
     """
-    roof_pitch_values = [i for i in range(20, 51, 1)]
-
-    for gebauede_dict in daten_grundflaeche:
-        building_area = gebauede_dict.get("building_area")
-        roof_type = gebauede_dict.get("roof_type")
+    for gebaeude in daten:
+        building_area = gebaeude.get("building_area")
+        roof_type = gebaeude.get("roof_type")
 
         if roof_type == "flat":
-            gebauede_dict["roof_area_schaeffler_flat"] = flat_roof_area_scheffler(
+            gebaeude["roof_area_schaeffler_flat"] = flat_roof_area_scheffler(
                 building_area=building_area
             )
-            gebauede_dict["roof_area_tum_flat"] = flat_roof_area_tum(
+            gebaeude["roof_area_tum_flat"] = flat_roof_area_tum(
                 building_area=building_area
             )
 
         elif roof_type == "gable":
-            for i in roof_pitch_values:
-                gebauede_dict[f"roof_area_schaeffler_gable_with_roof_pitch_{i}"] = (
-                    gable_roof_area_scheffler(building_area=building_area, roof_pitch=i)
+            for i in tilt_angles:
+                gebaeude[f"roof_area_schaeffler_gable_with_tilt_angle_{i}"] = (
+                    gable_roof_area_scheffler(building_area=building_area, tilt_angle=i)
                 )
-                gebauede_dict[f"roof_area_tum_gable_with_roof_pitch_{i}"] = (
+                gebaeude[f"roof_area_tum_gable_with_tilt_angle_{i}"] = (
                     gable_roof_area_tum(
-                        building_area=building_area, reduction_factor=0.8, roof_pitch=i
+                        building_area=building_area, reduction_factor=0.8, tilt_angle=i
                     )
                 )
 
         elif roof_type == "pitched":
-            for i in roof_pitch_values:
-                gebauede_dict[f"roof_area_schaeffler_pitched_with_roof_pitch_{i}"] = (
+            for i in tilt_angles:
+                gebaeude[f"roof_area_schaeffler_pitched_with_tilt_angle_{i}"] = (
                     pitched_roof_area_scheffler(
-                        building_area=building_area, reduction_factor=0.8, roof_pitch=i
+                        building_area=building_area, reduction_factor=0.8, tilt_angle=i
                     )
                 )
-                gebauede_dict[f"roof_area_tum_pitched_with_roof_pitch_{i}"] = (
+                gebaeude[f"roof_area_tum_pitched_with_tilt_angle_{i}"] = (
                     pitched_roof_area_tum(
-                        building_area=building_area, reduction_factor=0.8, roof_pitch=i
+                        building_area=building_area, reduction_factor=0.8, tilt_angle=i
                     )
                 )
 
         elif roof_type == "mixed":
-            gebauede_dict["roof_area_schaeffler_flat"] = flat_roof_area_scheffler(
+            gebaeude["roof_area_schaeffler_flat"] = flat_roof_area_scheffler(
                 building_area=building_area
             )
-            gebauede_dict["roof_area_tum_flat"] = flat_roof_area_tum(
+            gebaeude["roof_area_tum_flat"] = flat_roof_area_tum(
                 building_area=building_area
             )
 
-            for i in roof_pitch_values:
-                gebauede_dict[f"roof_area_schaeffler_gable_with_roof_pitch_{i}"] = (
-                    gable_roof_area_scheffler(building_area=building_area, roof_pitch=i)
+            for i in tilt_angles:
+                gebaeude[f"roof_area_schaeffler_gable_with_tilt_angle_{i}"] = (
+                    gable_roof_area_scheffler(building_area=building_area, tilt_angle=i)
                 )
-                gebauede_dict[f"roof_area_tum_gable_with_roof_pitch_{i}"] = (
+                gebaeude[f"roof_area_tum_gable_with_tilt_angle_{i}"] = (
                     gable_roof_area_tum(
-                        building_area=building_area, reduction_factor=0.8, roof_pitch=i
+                        building_area=building_area, reduction_factor=0.8, tilt_angle=i
                     )
                 )
 
-                gebauede_dict[f"roof_area_schaeffler_pitched_with_roof_pitch_{i}"] = (
+                gebaeude[f"roof_area_schaeffler_pitched_with_tilt_angle_{i}"] = (
                     pitched_roof_area_scheffler(
-                        building_area=building_area, reduction_factor=0.8, roof_pitch=i
+                        building_area=building_area, reduction_factor=0.8, tilt_angle=i
                     )
                 )
-                gebauede_dict[f"roof_area_tum_pitched_with_roof_pitch_{i}"] = (
+                gebaeude[f"roof_area_tum_pitched_with_tilt_angle_{i}"] = (
                     pitched_roof_area_tum(
-                        building_area=building_area, reduction_factor=0.8, roof_pitch=i
+                        building_area=building_area, reduction_factor=0.8, tilt_angle=i
                     )
                 )
 
         else:
             sys.exit("Fehler: Dachtyp nicht bekannt: " + roof_type)
 
-    return daten_grundflaeche
+    return daten
 
 
-def calculate_relative_yield(daten_grundflaeche: list[dict]) -> list[dict]:
+def calculate_relative_yield(daten: list[dict]) -> list[dict]:
     """Diese Funktion berechnet den jährlichen Stromertrag.
 
     Args:
-        daten_grundflaeche (list[dict]): Liste mit den Gebäudedaten.
+        daten (list[dict]): Liste mit den Gebäudedaten.
 
     Returns:
         list[dict]: Liste mit den Gebäudedaten und dem jährlichen Stromertrag.
     """
-    for gebauede_dict in daten_grundflaeche:
-        orientation = gebauede_dict.get("orientation")
-        roof_type = gebauede_dict.get("roof_type")
+    for gebauede in daten:
+        orientation = gebauede.get("orientation")
+        roof_type = gebauede.get("roof_type")
 
         if roof_type == "flat":
-            gebauede_dict["relative_yield"] = get_relative_yield(
+            gebauede["relative_yield"] = get_relative_yield(
                 orientation=int(orientation), tilt=0
             )
 
         elif roof_type in ["gable", "pitched", "mixed"]:
-            tilt_values = [i for i in range(20, 51, 1)]
-
             if orientation == "variabel":
                 for i in orientations:
-                    for j in tilt_values:
-                        gebauede_dict[
-                            f"relative_yield_with_orientation_{i}_tilt_{j}"
-                        ] = get_relative_yield(orientation=i, tilt=j)
+                    for j in tilt_angles:
+                        if roof_type == "mixed":
+                            # notwendig, damit Feld relative_yield vorhanden ist bei mixed
+                            gebauede[f"relative_yield"] = get_relative_yield(
+                                orientation=i, tilt=0
+                            )
 
-            for i in tilt_values:
-                gebauede_dict[f"relative_yield_with_tilt_{i}"] = get_relative_yield(
-                    orientation=int(orientation), tilt=i
-                )
+                        gebauede[f"relative_yield_with_orientation_{i}_tilt_{j}"] = (
+                            get_relative_yield(orientation=i, tilt=j)
+                        )
+            else:
+                for i in tilt_angles:
+                    if roof_type == "mixed":
+                        # notwendig, damit Feld relative_yield vorhanden ist bei mixed
+                        gebauede[f"relative_yield"] = get_relative_yield(
+                            orientation=int(orientation), tilt=0
+                        )
+
+                    gebauede[
+                        f"relative_yield_with_orientation_{orientation}_tilt_{i}"
+                    ] = get_relative_yield(orientation=int(orientation), tilt=i)
 
         else:
             sys.exit("Fehler: Dachtyp nicht bekannt: " + roof_type)
 
-    return daten_grundflaeche
+    return daten
 
 
-def calculate_globalstrahlung(daten_grundflaeche: list[dict]) -> list[dict]:
-    """Diese Funktion berechnet die Globalstrahlung.
+def calculate_globalstrahlung_pro_stunde(daten: list[dict]) -> list[dict]:
+    """Diese Funktion berechnet die Globalstrahlung pro Stunde.
 
     Args:
-        daten_grundflaeche (list[dict]): Liste mit den Gebäudedaten.
+        daten (list[dict]): Liste mit den Gebäudedaten.
 
     Returns:
         list[dict]: Liste mit den Gebäudedaten und der Globalstrahlung.
     """
-    if not os.path.exists("data/globalstrahlung_angepasst.csv"):
-        sys.exit("Fehler: Datei globalstrahlung_angepasst.csv nicht gefunden")
+    if not os.path.exists("data/globalstrahlung_stuendlich_mistelbach.csv"):
+        sys.exit(
+            "Fehler: Datei data/globalstrahlung_stuendlich_mistelbach.csv nicht gefunden"
+        )
 
-    daten_globalstrahlung = []
-    with open("data/globalstrahlung_angepasst.csv", "r", encoding="utf-8") as file:
-        for idx, zeile in enumerate(file):
-            if idx == 0:
-                continue
+    globalstrahlungs_werte: list[dict] = []
+    with open(
+        "data/globalstrahlung_stuendlich_mistelbach.csv", "r", encoding="utf-8"
+    ) as file:
+        for zeile in file:
+            zeitstempel, wert = zeile.strip().split(";")
 
-            inhalte = zeile.strip().split(",")[:2]
-            if len(inhalte) != 2:
-                sys.exit("Fehler: CSV hat nicht die richtige Anzahl an Spalten")
+            if not isinstance(zeitstempel, str) or not isinstance(wert, str):
+                sys.exit("Fehler: Datei hat nicht das richtige Format")
 
-            daten_globalstrahlung.append(
+            globalstrahlungs_werte.append(
                 {
-                    "timestamp": inhalte[0],
-                    "globalstrahlung": float(inhalte[1]),
+                    "zeitstempel": zeitstempel,
+                    "wert": float(wert.replace(",", ".")),
                 }
             )
 
-    for gebauede_dict in daten_grundflaeche:
-        roof_areas = [
-            key
-            for key in gebauede_dict.keys()
-            if key.startswith("roof_area_schaeffler") or key.startswith("roof_area_tum")
-        ]
+    wirkungsgrad_liste = list(np.arange(0.13, 0.25, 0.01))
+    for gebaeude in daten:
+        roof_type = gebaeude.get("roof_type")
 
-        for roof_area in roof_areas:
-            for idx, globalstrahlung in enumerate(daten_globalstrahlung):
-                pass
+        if roof_type == "flat":
+            # Wenn "flat", dann hat gebaude folgende Felder:
+            #
+            # Roof Area:
+            #   roof_area_schaeffler_flat
+            #   roof_area_tum_flat
+            #
+            # Relative Yield:
+            #   relative_yield
+
+            relative_yield = gebaeude.get("relative_yield")
+            assert relative_yield is not None
+
+            for wirkungsgrad in wirkungsgrad_liste:
+                for globalstrahlung in globalstrahlungs_werte:
+
+                    globalstrahlungs_wert = globalstrahlung.get("wert")
+                    assert globalstrahlungs_wert is not None
+
+                    globalstrahlung_zeitstempel = globalstrahlung.get("zeitstempel")
+                    assert globalstrahlung_zeitstempel is not None
+
+                    roof_area_schaeffler_flat = float(
+                        gebaeude.get("roof_area_schaeffler_flat")
+                    )
+                    assert roof_area_schaeffler_flat is not None
+
+                    roof_area_tum_flat = float(gebaeude.get("roof_area_tum_flat"))
+                    assert roof_area_tum_flat is not None
+
+                    gebaeude[
+                        f"leistung_scheaffler_flat_relative_yield_{relative_yield}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                    ] = (
+                        roof_area_schaeffler_flat
+                        * relative_yield
+                        * wirkungsgrad
+                        * globalstrahlungs_wert
+                    )
+                    gebaeude[
+                        f"leistung_tum_flat_relative_yield_{relative_yield}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                    ] = (
+                        roof_area_tum_flat
+                        * relative_yield
+                        * wirkungsgrad
+                        * globalstrahlungs_wert
+                    )
+
+                    print(
+                        f"Berechnung für {gebaeude.get('building')} mit Flachdach abgeschlossen"
+                    )
+
+        elif roof_type == "gable":
+            # Wenn "gable", dann hat gebaude folgende Felder:
+            #
+            # Roof Area:
+            #   roof_area_schaeffler_gable_with_tilt_angle_{i} für i in range(20, 51, 1)
+            #   roof_area_tum_gable_with_tilt_angle_{i} für i in range(20, 51, 1)
+            #
+            # Relative Yield:
+            #   relative_yield_with_orientation_{i}_tilt_{j}
+            #       für i in orientations und j in tilt_angles wenn orientation == "variabel"
+            #       für j in tilt_angles wenn orientation != "variabel"
+
+            orientation = gebaeude.get("orientation")
+            assert orientation is not None
+
+            if orientation == "variabel":
+                for i in orientations:
+                    for j in tilt_angles:
+                        for wirkungsgrad in wirkungsgrad_liste:
+                            for globalstrahlung in globalstrahlungs_werte:
+
+                                globalstrahlungs_wert = globalstrahlung.get("wert")
+                                assert globalstrahlungs_wert is not None
+
+                                globalstrahlung_zeitstempel = globalstrahlung.get(
+                                    "zeitstempel"
+                                )
+                                assert globalstrahlung_zeitstempel is not None
+
+                                roof_area_schaeffler_gable = float(
+                                    gebaeude.get(
+                                        f"roof_area_schaeffler_gable_with_tilt_angle_{j}"
+                                    )
+                                )
+                                assert roof_area_schaeffler_gable is not None
+
+                                roof_area_tum_gable = float(
+                                    gebaeude.get(
+                                        f"roof_area_tum_gable_with_tilt_angle_{j}"
+                                    )
+                                )
+                                assert roof_area_tum_gable is not None
+
+                                relative_yield = gebaeude.get(
+                                    f"relative_yield_with_orientation_{i}_tilt_{j}"
+                                )
+                                assert relative_yield is not None
+
+                                gebaeude[
+                                    f"leistung_scheaffler_gable_with_orientation_{i}_tilt_{j}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                ] = (
+                                    roof_area_schaeffler_gable
+                                    * relative_yield
+                                    * wirkungsgrad
+                                    * globalstrahlungs_wert
+                                )
+                                gebaeude[
+                                    f"leistung_tum_gable_with_orientation_{i}_tilt_{j}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                ] = (
+                                    roof_area_tum_gable
+                                    * relative_yield
+                                    * wirkungsgrad
+                                    * globalstrahlungs_wert
+                                )
+
+                                print(
+                                    f"Berechnung für {gebaeude.get('building')} mit Satteldach und variabler Orientierung abgeschlossen"
+                                )
+
+            else:
+                for i in tilt_angles:
+                    for wirkungsgrad in wirkungsgrad_liste:
+                        for globalstrahlung in globalstrahlungs_werte:
+
+                            globalstrahlungs_wert = globalstrahlung.get("wert")
+                            assert globalstrahlungs_wert is not None
+
+                            globalstrahlung_zeitstempel = globalstrahlung.get(
+                                "zeitstempel"
+                            )
+                            assert globalstrahlung_zeitstempel is not None
+
+                            roof_area_schaeffler_gable = float(
+                                gebaeude.get(
+                                    f"roof_area_schaeffler_gable_with_tilt_angle_{i}"
+                                )
+                            )
+                            assert roof_area_schaeffler_gable is not None
+
+                            roof_area_tum_gable = float(
+                                gebaeude.get(f"roof_area_tum_gable_with_tilt_angle_{i}")
+                            )
+                            assert roof_area_tum_gable is not None
+
+                            relative_yield = gebaeude.get(
+                                f"relative_yield_with_orientation_{orientation}_tilt_{i}"
+                            )
+                            assert relative_yield is not None
+
+                            gebaeude[
+                                f"leistung_scheaffler_gable_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                            ] = (
+                                roof_area_schaeffler_gable
+                                * relative_yield
+                                * wirkungsgrad
+                                * globalstrahlungs_wert
+                            )
+                            gebaeude[
+                                f"leistung_tum_gable_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                            ] = (
+                                roof_area_tum_gable
+                                * relative_yield
+                                * wirkungsgrad
+                                * globalstrahlungs_wert
+                            )
+
+                            print(
+                                f"Berechnung für {gebaeude.get('building')} mit Satteldach und fixer Orientierung abgeschlossen für tilt_angle {i}"
+                            )
+
+        elif roof_type == "pitched":
+            # Wenn "pitched", dann hat gebaude folgende Felder:
+            #
+            # Roof Area:
+            #   roof_area_schaeffler_pitched_with_tilt_angle_{i} für i in range(20, 51, 1)
+            #   roof_area_tum_pitched_with_tilt_angle_{i} für i in range(20, 51, 1)
+            #
+            # Relative Yield:
+            #   relative_yield_with_orientation_{i}_tilt_{j}
+            #       für i in orientations und j in tilt_angles wenn orientation == "variabel"
+            #       für j in tilt_angles wenn orientation != "variabel"
+            orientation = gebaeude.get("orientation")
+            assert orientation is not None
+
+            if orientation == "variabel":
+                for i in orientations:
+                    for j in tilt_angles:
+                        for wirkungsgrad in wirkungsgrad_liste:
+                            for globalstrahlung in globalstrahlungs_werte:
+
+                                globalstrahlungs_wert = globalstrahlung.get("wert")
+                                assert globalstrahlungs_wert is not None
+
+                                globalstrahlung_zeitstempel = globalstrahlung.get(
+                                    "zeitstempel"
+                                )
+                                assert globalstrahlung_zeitstempel is not None
+
+                                roof_area_schaeffler_pitched = float(
+                                    gebaeude.get(
+                                        f"roof_area_schaeffler_pitched_with_tilt_angle_{j}"
+                                    )
+                                )
+                                assert roof_area_schaeffler_pitched is not None
+
+                                roof_area_tum_pitched = float(
+                                    gebaeude.get(
+                                        f"roof_area_tum_pitched_with_tilt_angle_{j}"
+                                    )
+                                )
+                                assert roof_area_tum_pitched is not None
+
+                                relative_yield = gebaeude.get(
+                                    f"relative_yield_with_orientation_{i}_tilt_{j}"
+                                )
+                                assert relative_yield is not None
+
+                                gebaeude[
+                                    f"leistung_scheaffler_pitched_with_orientation_{i}_tilt_{j}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                ] = (
+                                    roof_area_schaeffler_pitched
+                                    * relative_yield
+                                    * wirkungsgrad
+                                    * globalstrahlungs_wert
+                                )
+                                gebaeude[
+                                    f"leistung_tum_pitched_with_orientation_{i}_tilt_{j}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                ] = (
+                                    roof_area_tum_pitched
+                                    * relative_yield
+                                    * wirkungsgrad
+                                    * globalstrahlungs_wert
+                                )
+
+                                print(
+                                    f"Berechnung für {gebaeude.get('building')} mit Schrägdach und variabler Orientierung abgeschlossen"
+                                )
+
+            else:
+                for i in tilt_angles:
+                    for wirkungsgrad in wirkungsgrad_liste:
+                        for globalstrahlung in globalstrahlungs_werte:
+
+                            globalstrahlungs_wert = globalstrahlung.get("wert")
+                            assert globalstrahlungs_wert is not None
+
+                            globalstrahlung_zeitstempel = globalstrahlung.get(
+                                "zeitstempel"
+                            )
+                            assert globalstrahlung_zeitstempel is not None
+
+                            roof_area_schaeffler_pitched = float(
+                                gebaeude.get(
+                                    f"roof_area_schaeffler_pitched_with_tilt_angle_{i}"
+                                )
+                            )
+                            assert roof_area_schaeffler_pitched is not None
+
+                            roof_area_tum_pitched = float(
+                                gebaeude.get(
+                                    f"roof_area_tum_pitched_with_tilt_angle_{i}"
+                                )
+                            )
+                            assert roof_area_tum_pitched is not None
+
+                            relative_yield = gebaeude.get(
+                                f"relative_yield_with_orientation_{orientation}_tilt_{i}"
+                            )
+                            assert relative_yield is not None
+
+                            gebaeude[
+                                f"leistung_scheaffler_pitched_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                            ] = (
+                                roof_area_schaeffler_pitched
+                                * relative_yield
+                                * wirkungsgrad
+                                * globalstrahlungs_wert
+                            )
+                            gebaeude[
+                                f"leistung_tum_pitched_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                            ] = (
+                                roof_area_tum_pitched
+                                * relative_yield
+                                * wirkungsgrad
+                                * globalstrahlungs_wert
+                            )
+
+                            print(
+                                f"Berechnung für {gebaeude.get('building')} mit Schrägdach und fixer Orientierung abgeschlossen für tilt_angle {i}"
+                            )
+
+        elif roof_type == "mixed":
+            # Wenn "mixed", dann hat gebaude folgende Felder:
+            #
+            # Roof Area:
+            #   roof_area_schaeffler_flat
+            #   roof_area_tum_flat
+            #   roof_area_schaeffler_gable_with_tilt_angle_{i} für i in range(20, 51, 1)
+            #   roof_area_tum_gable_with_tilt_angle_{i} für i in range(20, 51, 1)
+            #   roof_area_schaeffler_pitched_with_tilt_angle_{i} für i in range(20, 51, 1)
+            #   roof_area_tum_pitched_with_tilt_angle_{i} für i in range(20, 51, 1)
+            #
+            # Relative Yield:
+            #   relative_yield
+            #   relative_yield_with_orientation_{i}_tilt_{j}
+            #       für i in orientations und j in tilt_angles wenn orientation == "variabel"
+            #       für j in tilt_angles wenn orientation != "variabel"
+
+            ### FLAT ###
+            relative_yield = gebaeude.get("relative_yield")
+            print("HER")
+            print(gebaeude.get("building"))
+            assert relative_yield is not None
+
+            for wirkungsgrad in wirkungsgrad_liste:
+                for globalstrahlung in globalstrahlungs_werte:
+
+                    globalstrahlungs_wert = globalstrahlung.get("wert")
+                    assert globalstrahlungs_wert is not None
+
+                    globalstrahlung_zeitstempel = globalstrahlung.get("zeitstempel")
+                    assert globalstrahlung_zeitstempel is not None
+
+                    roof_area_schaeffler_flat = float(
+                        gebaeude.get("roof_area_schaeffler_flat")
+                    )
+                    assert roof_area_schaeffler_flat is not None
+
+                    roof_area_tum_flat = float(gebaeude.get("roof_area_tum_flat"))
+                    assert roof_area_tum_flat is not None
+
+                    gebaeude[
+                        f"leistung_scheaffler_flat_relative_yield_{relative_yield}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                    ] = (
+                        roof_area_schaeffler_flat
+                        * relative_yield
+                        * wirkungsgrad
+                        * globalstrahlungs_wert
+                    )
+                    gebaeude[
+                        f"leistung_tum_flat_relative_yield_{relative_yield}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                    ] = (
+                        roof_area_tum_flat
+                        * relative_yield
+                        * wirkungsgrad
+                        * globalstrahlungs_wert
+                    )
+
+                    print(
+                        f"Berechnung für {gebaeude.get('building')} mit Flachdach abgeschlossen für den Mixed Typ"
+                    )
+
+            ### GABLE ###
+            orientation = gebaeude.get("orientation")
+            assert orientation is not None
+
+            if orientation == "variabel":
+                for i in orientations:
+                    for j in tilt_angles:
+                        for wirkungsgrad in wirkungsgrad_liste:
+                            for globalstrahlung in globalstrahlungs_werte:
+
+                                globalstrahlungs_wert = globalstrahlung.get("wert")
+                                assert globalstrahlungs_wert is not None
+
+                                globalstrahlung_zeitstempel = globalstrahlung.get(
+                                    "zeitstempel"
+                                )
+                                assert globalstrahlung_zeitstempel is not None
+
+                                roof_area_schaeffler_gable = float(
+                                    gebaeude.get(
+                                        f"roof_area_schaeffler_gable_with_tilt_angle_{j}"
+                                    )
+                                )
+                                assert roof_area_schaeffler_gable is not None
+
+                                roof_area_tum_gable = float(
+                                    gebaeude.get(
+                                        f"roof_area_tum_gable_with_tilt_angle_{j}"
+                                    )
+                                )
+                                assert roof_area_tum_gable is not None
+
+                                relative_yield = gebaeude.get(
+                                    f"relative_yield_with_orientation_{i}_tilt_{j}"
+                                )
+                                assert relative_yield is not None
+
+                                gebaeude[
+                                    f"leistung_scheaffler_gable_with_orientation_{i}_tilt_{j}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                ] = (
+                                    roof_area_schaeffler_gable
+                                    * relative_yield
+                                    * wirkungsgrad
+                                    * globalstrahlungs_wert
+                                )
+                                gebaeude[
+                                    f"leistung_tum_gable_with_orientation_{i}_tilt_{j}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                ] = (
+                                    roof_area_tum_gable
+                                    * relative_yield
+                                    * wirkungsgrad
+                                    * globalstrahlungs_wert
+                                )
+
+                                print(
+                                    f"Berechnung für {gebaeude.get('building')} mit Satteldach und variabler Orientierung abgeschlossen für den Mixed Typ"
+                                )
+
+            else:
+                for i in tilt_angles:
+                    for wirkungsgrad in wirkungsgrad_liste:
+                        for globalstrahlung in globalstrahlungs_werte:
+
+                            globalstrahlungs_wert = globalstrahlung.get("wert")
+                            assert globalstrahlungs_wert is not None
+
+                            globalstrahlung_zeitstempel = globalstrahlung.get(
+                                "zeitstempel"
+                            )
+                            assert globalstrahlung_zeitstempel is not None
+
+                            roof_area_schaeffler_gable = float(
+                                gebaeude.get(
+                                    f"roof_area_schaeffler_gable_with_tilt_angle_{i}"
+                                )
+                            )
+                            assert roof_area_schaeffler_gable is not None
+
+                            roof_area_tum_gable = float(
+                                gebaeude.get(f"roof_area_tum_gable_with_tilt_angle_{i}")
+                            )
+                            assert roof_area_tum_gable is not None
+
+                            relative_yield = gebaeude.get(
+                                f"relative_yield_with_orientation_{orientation}_tilt_{i}"
+                            )
+                            assert relative_yield is not None
+
+                            gebaeude[
+                                f"leistung_scheaffler_gable_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                            ] = (
+                                roof_area_schaeffler_gable
+                                * relative_yield
+                                * wirkungsgrad
+                                * globalstrahlungs_wert
+                            )
+                            gebaeude[
+                                f"leistung_tum_gable_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                            ] = (
+                                roof_area_tum_gable
+                                * relative_yield
+                                * wirkungsgrad
+                                * globalstrahlungs_wert
+                            )
+
+                            print(
+                                f"Berechnung für {gebaeude.get('building')} mit Satteldach und fixer Orientierung abgeschlossen für den Mixed Typ für tilt_angle {i} für den Mixed Typ"
+                            )
+
+            ### PITCHED ###
+            orientation = gebaeude.get("orientation")
+            assert orientation is not None
+
+            if orientation == "variabel":
+                for i in orientations:
+                    for j in tilt_angles:
+                        for wirkungsgrad in wirkungsgrad_liste:
+                            for globalstrahlung in globalstrahlungs_werte:
+
+                                globalstrahlungs_wert = globalstrahlung.get("wert")
+                                assert globalstrahlungs_wert is not None
+
+                                globalstrahlung_zeitstempel = globalstrahlung.get(
+                                    "zeitstempel"
+                                )
+                                assert globalstrahlung_zeitstempel is not None
+
+                                roof_area_schaeffler_pitched = float(
+                                    gebaeude.get(
+                                        f"roof_area_schaeffler_pitched_with_tilt_angle_{j}"
+                                    )
+                                )
+                                assert roof_area_schaeffler_pitched is not None
+
+                                roof_area_tum_pitched = float(
+                                    gebaeude.get(
+                                        f"roof_area_tum_pitched_with_tilt_angle_{j}"
+                                    )
+                                )
+                                assert roof_area_tum_pitched is not None
+
+                                relative_yield = gebaeude.get(
+                                    f"relative_yield_with_orientation_{i}_tilt_{j}"
+                                )
+                                assert relative_yield is not None
+
+                                gebaeude[
+                                    f"leistung_scheaffler_pitched_with_orientation_{i}_tilt_{j}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                ] = (
+                                    roof_area_schaeffler_pitched
+                                    * relative_yield
+                                    * wirkungsgrad
+                                    * globalstrahlungs_wert
+                                )
+                                gebaeude[
+                                    f"leistung_tum_pitched_with_orientation_{i}_tilt_{j}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                ] = (
+                                    roof_area_tum_pitched
+                                    * relative_yield
+                                    * wirkungsgrad
+                                    * globalstrahlungs_wert
+                                )
+
+                                print(
+                                    f"Berechnung für {gebaeude.get('building')} mit Schrägdach und variabler Orientierung abgeschlossen für den Mixed Typ"
+                                )
+
+            else:
+                for i in tilt_angles:
+                    for wirkungsgrad in wirkungsgrad_liste:
+                        for globalstrahlung in globalstrahlungs_werte:
+
+                            globalstrahlungs_wert = globalstrahlung.get("wert")
+                            assert globalstrahlungs_wert is not None
+
+                            globalstrahlung_zeitstempel = globalstrahlung.get(
+                                "zeitstempel"
+                            )
+                            assert globalstrahlung_zeitstempel is not None
+
+                            roof_area_schaeffler_pitched = float(
+                                gebaeude.get(
+                                    f"roof_area_schaeffler_pitched_with_tilt_angle_{i}"
+                                )
+                            )
+                            assert roof_area_schaeffler_pitched is not None
+
+                            roof_area_tum_pitched = float(
+                                gebaeude.get(
+                                    f"roof_area_tum_pitched_with_tilt_angle_{i}"
+                                )
+                            )
+                            assert roof_area_tum_pitched is not None
+
+                            relative_yield = gebaeude.get(
+                                f"relative_yield_with_orientation_{orientation}_tilt_{i}"
+                            )
+                            assert relative_yield is not None
+
+                            gebaeude[
+                                f"leistung_scheaffler_pitched_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                            ] = (
+                                roof_area_schaeffler_pitched
+                                * relative_yield
+                                * wirkungsgrad
+                                * globalstrahlungs_wert
+                            )
+                            gebaeude[
+                                f"leistung_tum_pitched_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                            ] = (
+                                roof_area_tum_pitched
+                                * relative_yield
+                                * wirkungsgrad
+                                * globalstrahlungs_wert
+                            )
+
+                            print(
+                                f"Berechnung für {gebaeude.get('building')} mit Schrägdach und fixer Orientierung abgeschlossen für den Mixed Typ für tilt_angle {i} für den Mixed Typ"
+                            )
+
+        else:
+            sys.exit("Fehler: Dachtyp nicht bekannt: " + roof_type)
+
+    return daten
 
 
-def speicher_daten_als_excel(daten_grundflaeche: list[dict]) -> None:
+def speichere_daten_als_json(daten: list[dict]) -> None:
+    """Diese Funktion speichert die Daten als JSON-Datei.
+
+    Args:
+        daten (list[dict]): Liste mit den Gebäudedaten.
+    """
+    with open("data/daten_mit_dachflaeche.json", "w", encoding="utf-8") as file:
+        json.dump(daten, file, indent=4)
+
+
+def speicher_daten_als_excel(daten: list[dict]) -> None:
     """Diese Funktion speichert die Daten als Excel-Datei.
 
     Args:
-        daten_grundflaeche (list[dict]): Liste mit den Gebäudedaten.
+        daten (list[dict]): Liste mit den Gebäudedaten.
     """
-    df = pd.DataFrame(daten_grundflaeche)
+    df = pd.DataFrame(daten)
     df.to_excel("data/daten_mit_dachflaeche.xlsx", index=False)
 
 
 if __name__ == "__main__":
-    daten_grundflaeche = erstelle_daten_grundflaeche()
-    daten_grundflaeche = calulate_roof_area(daten_grundflaeche)
-    daten_grundflaeche = calculate_relative_yield(daten_grundflaeche)
-    daten_grundflaeche = calculate_globalstrahlung(daten_grundflaeche)
-    speicher_daten_als_excel(daten_grundflaeche)
+    daten = erstelle_daten()
+    daten = calulate_roof_area(daten)
+    daten = calculate_relative_yield(daten)
+    daten = calculate_globalstrahlung_pro_stunde(daten)
+    speichere_daten_als_json(daten)
+    speicher_daten_als_excel(daten)
