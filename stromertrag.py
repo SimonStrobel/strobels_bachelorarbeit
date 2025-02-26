@@ -420,7 +420,7 @@ def calculate_globalstrahlung_pro_stunde(daten: list[dict]) -> list[dict]:
                             assert relative_yield is not None
 
                             gebaeude[
-                                f"leistung_scheaffler_gable_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                f"leistung_scheaffler_gable_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
                             ] = (
                                 roof_area_schaeffler_gable
                                 * relative_yield
@@ -428,7 +428,7 @@ def calculate_globalstrahlung_pro_stunde(daten: list[dict]) -> list[dict]:
                                 * globalstrahlungs_wert
                             )
                             gebaeude[
-                                f"leistung_tum_gable_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
+                                f"leistung_tum_gable_with_orientation_{orientation}_tilt_{i}_wirkungsgrad_{wirkungsgrad}_globalstrahlung_{globalstrahlungs_wert}_zeitstempel_{globalstrahlung_zeitstempel}"
                             ] = (
                                 roof_area_tum_gable
                                 * relative_yield
