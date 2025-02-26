@@ -65,7 +65,7 @@ def erstelle_daten() -> list:
         float: Grundfläche
     """
     if not os.path.exists("data/grundflaeche.csv"):
-        sys.exit("Fehler: Datei grundflaeche.txt nicht gefunden")
+        sys.exit("Fehler: Datei grundflaeche.csv nicht gefunden")
 
     daten = []
     with open("data/grundflaeche.csv", "r", encoding="utf-8") as file:
