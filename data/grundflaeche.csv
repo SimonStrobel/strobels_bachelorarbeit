@@ -1,7 +1,7 @@
 ﻿Campus/Gebäude;Grundfläche in m2;Dachart;Orientierung
 AUDIMAX;1.620,98;gemischt;165
 B 1;286,47;Satteldach;60
-B 2;307,40;gemischt;0
+B 2;307,40;Satteldach;60
 B 3;425,88;Satteldach;60
 B 4;181,72;Satteldach;150
 B 6;234,45;Satteldach;165
@@ -11,7 +11,6 @@ B 9;1.123,16;Flachdach;0
 B 10;278,17;Satteldach;90
 B 11;287,14;Satteldach;90
 B 12;136,26;Satteldach;90
-B 13;125,52;gemischt;0
 B 14;137,58;Satteldach;0
 BGI;3.498,30;Schrägdach;variabel
 BLC;370,47;gemischt;0
@@ -19,15 +18,13 @@ FAN A;1.839,58;Flachdach;0
 FAN B;1.635,23;Flachdach;0
 FAN C;2.363,70;Flachdach;0
 FAN D;1.659,50;Flachdach;0
-FZA;1.096,86;gemischt;0
+FZA;1.096,86;Flachdach;0
 GEO I;1.476,49;Flachdach;0
 GEO II;3.181,86;Flachdach;0
 GEO III;215,77;Flachdach;0
 GW I;1.261,21;Schrägdach;variabel
 GW II;1.320,43;Schrägdach;90
 INF;1.696,16;Flachdach;0
-KIKRI;423,57;gemischt;0
-LIM;262,20;gemischt;0
 Mensa;4.899,98;gemischt;variabel
 Mensa Frischraum;795,45;Flachdach;0
 NMR;502,00;Flachdach;0
@@ -36,7 +33,6 @@ NW II;8.527,50;Flachdach;0
 NW III;2.225,20;Flachdach;0
 NW VI;507,69;Flachdach;0
 ÖBG;8.759,46;gemischt;variabel
-PBS;610,95;gemischt;0
 RW I;3.248,51;Flachdach;0
 RW II;6.172,73;Flachdach;0
 Sport;5.366,33;gemischt;variabel
