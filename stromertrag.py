@@ -36,7 +36,6 @@ Jährlicher Stromertrag:
 import json
 import os
 import sys
-import pandas as pd
 import numpy as np
 
 from formulas.roof_areas_scheffler import (
@@ -53,9 +52,9 @@ from formulas.relative_yield_potential import (
     get_relative_yield,
     orientations,
 )
-from formulas.annual_solar_yield import annual_solar_yield
 
 tilt_angles = [i for i in range(20, 51, 10)]  # 20, 30, 40, 50
+wirkungsgrad_liste = list(np.arange(0.18, 0.24, 0.01))
 
 
 def erstelle_daten() -> list:
@@ -265,7 +264,6 @@ def calculate_globalstrahlung_pro_stunde(daten: list[dict]) -> list[dict]:
                 }
             )
 
-    wirkungsgrad_liste = list(np.arange(0.13, 0.25, 0.01))
     for gebaeude in daten:
         roof_type = gebaeude.get("roof_type")
 
@@ -858,20 +856,9 @@ def speichere_daten_als_json(daten: list[dict]) -> None:
         json.dump(daten, file, indent=4)
 
 
-def speicher_daten_als_excel(daten: list[dict]) -> None:
-    """Diese Funktion speichert die Daten als Excel-Datei.
-
-    Args:
-        daten (list[dict]): Liste mit den Gebäudedaten.
-    """
-    df = pd.DataFrame(daten)
-    df.to_excel("data/daten_mit_dachflaeche.xlsx", index=False)
-
-
 if __name__ == "__main__":
     daten = erstelle_daten()
     daten = calulate_roof_area(daten)
     daten = calculate_relative_yield(daten)
     daten = calculate_globalstrahlung_pro_stunde(daten)
     speichere_daten_als_json(daten)
-    speicher_daten_als_excel(daten)
