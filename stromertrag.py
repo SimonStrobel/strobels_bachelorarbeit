@@ -36,7 +36,6 @@ Jährlicher Stromertrag:
 import json
 import os
 import sys
-import numpy as np
 
 from formulas.roof_areas_scheffler import (
     flat_roof_area_scheffler,
