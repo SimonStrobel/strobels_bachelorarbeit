@@ -53,8 +53,8 @@ from formulas.relative_yield_potential import (
     orientations,
 )
 
-tilt_angles = [i for i in range(20, 51, 10)]  # 20, 30, 40, 50
-wirkungsgrad_liste = list(np.arange(0.18, 0.24, 0.01))
+tilt_angles = [20, 30, 40, 50]
+wirkungsgrad_liste = [0.18, 0.20, 0.22, 0.24]
 
 
 def erstelle_daten() -> list:
@@ -852,7 +852,7 @@ def speichere_daten_als_json(daten: list[dict]) -> None:
     Args:
         daten (list[dict]): Liste mit den Gebäudedaten.
     """
-    with open("data/daten_mit_dachflaeche.json", "w", encoding="utf-8") as file:
+    with open("data/ergebnisse.json", "w", encoding="utf-8") as file:
         json.dump(daten, file, indent=4)
 
 
