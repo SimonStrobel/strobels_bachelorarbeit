@@ -28,7 +28,6 @@ Danach wird das Ergebnis graphisch dargestellt, die aggregierten Werte in eine E
 
 import ijson
 from openpyxl import load_workbook
-import matplotlib.pyplot as plt
 from datetime import datetime
 import pandas as pd
 import os

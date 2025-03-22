@@ -6,8 +6,5 @@ numpy==2.2.2
 pandas==2.2.3
 ijson==3.3.0
 
-# Plot
-matplotlib==3.10.1
-
 # Excel
 openpyxl==3.1.5
