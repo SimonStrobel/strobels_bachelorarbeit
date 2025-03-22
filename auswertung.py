@@ -166,7 +166,7 @@ def aggregate_group(group: pd.DataFrame) -> pd.DataFrame:
 def auswertung():
     """Hauptfunktion zur Auswertung der Daten aus der ergebnisse.json."""
     data_rows = []
-    with open("data/ergebnisse_2.json", "rb") as f:
+    with open("data/ergebnisse.json", "rb") as f:
         for building_obj in ijson.items(f, "item"):
             building_name = building_obj.get("building")
             if not building_name:
@@ -279,7 +279,7 @@ def auswertung():
     stat_order = {"min": 0, "avg": 1, "max": 2}
     aggregated["stat_order"] = aggregated["statistic"].map(stat_order)
     aggregated.sort_values(
-        by=["building", "berechnungsart", "hour", "stat_order"], inplace=True
+        by=["building", "berechnungsart", "stat_order", "hour"], inplace=True
     )
     aggregated.drop(columns=["stat_order"], inplace=True)
     # Da 'datum' und 'hour' identisch sind, entfernen der redundanten Spalte "datum"
