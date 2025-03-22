@@ -14,7 +14,7 @@ if roof_type == "gable":
     - leistung_scheaffler_gable_with_orientation_{orientation_wert}_tilt_{tilt_wert}_wirkungsgrad_{wirkungsgrad_wert}_globalstrahlung_{globalstrahlung_wert}_zeitstempel_{zeitstempel}
     - leistung_tum_gable_with_orientation_{orientation_wert}_tilt_{tilt_wert}_wirkungsgrad_{wirkungsgrad_wert}_globalstrahlung_{globalstrahlung_wert}_zeitstempel_{zeitstempel}
 
-if roof_type == "mixed": 
+if roof_type == "mixed":
     - Alle Felder von flat, pitched und gable
 
 Berechnet werden soll für jedes berechnungsart (getrennt nach TUM und Scheaffler), für jedes Building und

@@ -29,7 +29,7 @@ def gable_roof_area_scheffler(building_area: float, tilt_angle: float) -> float:
         float: The pitched roof area in square meters.
     """
     tilt_angle_rad = radians(tilt_angle)
-    return building_area / cos(tilt_angle_rad)
+    return (building_area * 0.4) / cos(tilt_angle_rad)
 
 
 def pitched_roof_area_scheffler(

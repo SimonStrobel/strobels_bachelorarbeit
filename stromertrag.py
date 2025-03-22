@@ -11,18 +11,18 @@ Scheaffler:
     pitched_roof_area_scheffler
         Parameter: building_area, reduction_factor, tilt_angle
 
-        
+
 TUM:
     flat_roof_area_tum
-        Parameter: building_area    
+        Parameter: building_area
 
     gable_roof_area_tum
         Parameter: building_area, reduction_factor, tilt_angle
 
     pitched_roof_area_tum
-        Parameter: building_area, reduction_factor, tilt_angle  
+        Parameter: building_area, reduction_factor, tilt_angle
 
- 
+
 Relativer Ertragspotential:
     get_relative_yield
         Parameter: orientation, tilt
