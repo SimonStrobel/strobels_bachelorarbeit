@@ -282,33 +282,38 @@ def auswertung():
         by=["building", "berechnungsart", "stat_order", "hour"], inplace=True
     )
     aggregated.drop(columns=["stat_order"], inplace=True)
-    # Da 'datum' und 'hour' identisch sind, entfernen der redundanten Spalte "datum"
     aggregated.drop(columns=["datum"], inplace=True)
 
-    # Speichern in Excel-Datei
+    # Speichern in Excel-Dateien, eine pro Gebäude
     excel_folder = "data"
     if not os.path.exists(excel_folder):
         os.makedirs(excel_folder)
-    excel_filename = os.path.join(excel_folder, "aggregated_data.xlsx")
-    aggregated.to_excel(excel_filename, index=False)
-    print(f"Die aggregierten Daten wurden in '{excel_filename}' gespeichert.")
 
-    wb = load_workbook(excel_filename)
-    ws = wb.active
-    for column_cells in ws.columns:
-        max_length = 0
-        column = column_cells[0].column_letter
-        for cell in column_cells:
-            try:
-                cell_length = len(str(cell.value))
-                if cell_length > max_length:
-                    max_length = cell_length
-            except:
-                pass
-        adjusted_width = max_length + 2
-        ws.column_dimensions[column].width = adjusted_width
-    wb.save(excel_filename)
-    print("Die Spaltenbreiten in der Excel-Datei wurden angepasst.")
+    # Gruppiere die aggregierten Daten nach Gebäude
+    for building, df_building in aggregated.groupby("building"):
+        excel_filename = os.path.join(excel_folder, safe_filename(building) + ".xlsx")
+        df_building.to_excel(excel_filename, index=False)
+        print(
+            f"Die aggregierten Daten für Gebäude '{building}' wurden in '{excel_filename}' gespeichert."
+        )
+
+        # Anpassen der Spaltenbreiten
+        wb = load_workbook(excel_filename)
+        ws = wb.active
+        for column_cells in ws.columns:
+            max_length = 0
+            column = column_cells[0].column_letter
+            for cell in column_cells:
+                try:
+                    cell_length = len(str(cell.value))
+                    if cell_length > max_length:
+                        max_length = cell_length
+                except:
+                    pass
+            adjusted_width = max_length + 2
+            ws.column_dimensions[column].width = adjusted_width
+        wb.save(excel_filename)
+        print(f"Die Spaltenbreiten in der Datei '{excel_filename}' wurden angepasst.")
 
 
 if __name__ == "__main__":
